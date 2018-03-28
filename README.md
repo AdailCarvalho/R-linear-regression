@@ -45,7 +45,7 @@ The returned List contains:
 
 *	**$Coefficients** : list containing the values founded for the linear model coeficients 
 *	**$Predictions** : matrix that shows the predicted values, the real values for Y and the E residuals
-*	**$RMSErrorRate** : rating used to know how good our model is. Value is always between -1< R <=1.
+*	**$RMSErrorRate** : rating used to know how good our model is. A good model is always between -1< R <=1.
 *	**$PossibleOutliersNumLines**: show lines containing both min anx max residuals values.
 	
 ## Author
