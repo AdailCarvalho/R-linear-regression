@@ -50,4 +50,4 @@ The returned List contains:
 	
 ## Author
 
-Adail [LinkedIn](https://www.linkedin.com/in/adail-carvalho-a34343106)
+Contact me via [LinkedIn](https://www.linkedin.com/in/adail-carvalho-a34343106)
