@@ -9,7 +9,12 @@ A program to perform Linear Regression analysis over files.
 
 ## Requirements
 
-*	**matlib** : package used to make matrix math.
+The packages above need to be installed before running the program:
+
+*	**matlib** : package used to make matrix math
+
+Installing matlib:
+
 	install.packages("matlib")
 	
 ## Usage
@@ -27,7 +32,7 @@ The entry point for the program is the method linearModelMain().
 	  
 *	**@resultModel** a List containing both Predictions and the Linear Model coefficients.
 
-You can find some sample datasets on *src/main/data*. 
+You can find some sample datasets on *src/sample/data*. 
 
 To run a regression model:
 
@@ -45,4 +50,4 @@ The returned List contains:
 	
 ## Author
 
-Contact me through [LinkedIn](https://www.linkedin.com/in/adail-carvalho-a34343106)
+Adail [LinkedIn](https://www.linkedin.com/in/adail-carvalho-a34343106)
