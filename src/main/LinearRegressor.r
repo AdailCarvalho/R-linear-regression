@@ -26,8 +26,9 @@ notSupportedException <- simpleError("Operation with the passed args are not sup
 
  # returns
  @ resultModel A List containing both Predictions and the Linear Model coefficients.
-               $Coefficients :  
+               $Coefficients : list containing the values founded for the linear model coeficients 
                $Predictions  : matrix that shows the predicted values, the real values for Y and the E residuals
+               $RMSErrorRate : rating used to know how good our model is. Value is always between -1< R <=1.
 
  # usage
 
@@ -84,7 +85,7 @@ multiLinearModel <- function (matrixDataSet, dependentVar, independentVarList) {
   }
   
   #Identifies which column represents the dependent variable. Separates the X variables and Y
-  #And store in different matrices
+  #And store in different matrices.
   dependentColIndex <- grep(dependentVar, colnames(matrixDataSet))
   dependentMatrix <<- matrixDataSet[,dependentColIndex]
   
@@ -110,12 +111,16 @@ multiLinearModel <- function (matrixDataSet, dependentVar, independentVarList) {
   
   # Estimates Y values
   resultModel <- createRegressionModel(coeficientsMatrix, independentMatrix, dependentMatrix, levelsMatrix)
+  
+  # Calculates the Error rate using Root Main Square Error
+  modelErrorRate <- estimateError(resultModel[,2])
+  
   linearModel <- cbind(dependentMatrix,resultModel)
   colnames(linearModel) <- c("Real_Y","Predict_Y", "Resid_E")
   
   # Gather generetade values
-  results <- list(coeficientsMatrix, linearModel)
-  names(results) <-c("Coefficients", "Predictions")
+  results <- list(coeficientsMatrix, linearModel, modelErrorRate)
+  names(results) <-c("Coefficients", "Predictions", "RMSErrorRate")
   
   returnValue(results)
 }
@@ -210,4 +215,10 @@ treatInfValuesAsZeros <- function(matriz) {
     }
   }
   returnValue(matriz) 
+}
+
+# Estimate erros using RootMeanSquareError(RMSE).
+# @residualVector Vector that holds the E residuals of our model.
+estimateError <- function(residualVector) {
+  returnValue(sqrt(sum(resid ** 2) / length(residualVector)))
 }
