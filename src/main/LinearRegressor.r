@@ -326,10 +326,10 @@
     if (length(nonOutfitted) > 0) {
       for(r in 1:nrow(tmpMatrix)) {
         for (c in 1:ncol(tmpMatrix)) {
-          tmpMatrix[r,c] <- matrixDataset[nonOutfitted[r],c]  
+          tmpMatrix[r,c] <- matrixDataset[nonOutfitted[r],c]
         }
       }
-      returnValue(tmpMatrix)
+      matrixDataset <- tmpMatrix
     } 
 
     returnValue(matrixDataset)
