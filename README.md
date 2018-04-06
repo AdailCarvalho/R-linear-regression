@@ -6,16 +6,6 @@ A program to perform Linear Regression analysis.
 
 *	Simple Linear Regression: generates a regression model based on a X independent column and a Y dependent column
 *	Multivariant Linear Regression: generates a regression model based on multiple X independent columns and a Y dependent column
-
-## Requirements
-
-The following packages need to be installed before running the program:
-
-*	**matlib** : package used to make matrix math
-
-Installing matlib:
-
-	install.packages("matlib")
 	
 ## Usage
 
@@ -57,7 +47,7 @@ try to recreate the predictions using the newer dataset.
 
 	OriginalM         Predictions (~Y) , Residuals (E)
   
-	x1   x2   y  | ~Y     E
+	x1   x2   y    | ~Y     E
 	1|2   -1    4  |  3.8   0.2
 	2|3   9.2  -8  |  -7.3  -0.7
 	3|-1  0.9  0.9 |  3.6   2.6
