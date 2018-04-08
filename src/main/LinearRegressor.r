@@ -3,13 +3,31 @@
   # @since : 2018-03-24
   # __________________________________
   
-  #Requires ====
+  #Required Libs ====
+  checkAndInstallRequiredLib <- function(libname, extralib = NULL) {
+    if (!require(libname)) {
+      install.packages(libname)
+    }
+    
+    if (!missing(extralib)) {
+      if (!require(extralib)) {
+        install.packages(extralib)  
+      }
+    }
+  }
+  # Plotly: library that provides beaultiful chart tools.
+  library(plotly)
+
+  # Webshot: provides chart exports capabilities.
+  library(webshot)
+  
   # Matrices / DFrames headers ====
-  resultsHeader <- c("Coefficients", "Predictions", "RMSErrorRate", "Dataset")
-  lmHeader <- c("Real_Y","Predict_Y", "Resid_E")
+  modelHeader <- c("Coefficients", "Predictions", "RMSErrorRate", "Dataset", "YDependent", "XIndependent")
+  lmHeader <- c("Observed Y","Predicted Y", "Residual E")
   
   #Error messages ====
-  insuficientArgsException <- simpleError("Missing independent variables. Unable to proceed.")
+  insuficientArgsException <- simpleError("Missing one or more required variables to proceed = ")
+  insuficientArgsWarning <- "Missing one or more required variables to do the requested operation = "
   illegalArgsException <- simpleError("Invalid args: ")
   notSupportedException <- simpleError("Operation with the passed args are not supported yet.")
   
@@ -25,7 +43,7 @@
         Columns X must be numerics.
   
    # returns
-   @ resultModel A List containing both Predictions and the Linear Model coefficients.
+   @ model A List containing both Predictions and the Linear Model coefficients.
                  $Coefficients : list containing the values founded for the linear model coeficients 
                  $Predictions  : matrix that shows the predicted values, the real values for Y and the E residuals
                  $RMSErrorRate : rating used to know how good our model is. A good model is always between -1< R <=1.
@@ -42,19 +60,19 @@
   '
   linearModel <- function (filePath, delimiter, dependentVar, ...) {
     independentVarList <- list(...)
-      
+    
     if (is.null(dependentVar) || length(independentVarList) == 0) {
-      stop(insuficientArgsException)    
+      stop(paste(insuficientArgsException, "{dependentVar, independentVarList}"))    
     }
     
     matrixDataSet <- getFileToMatrix(filePath, delimiter)
     if (length(independentVarList) == 1) {
-      resultModel <- simpleLinearModel(matrixDataSet, dependentVar, independentVarList[[1]])
+      model <- simpleLinearModel(matrixDataSet, dependentVar, independentVarList[[1]])
     } else {
-      resultModel <- multiLinearModel(matrixDataSet, dependentVar, independentVarList)    
+      model <- multiLinearModel(matrixDataSet, dependentVar, independentVarList)    
     }
     
-    returnValue(resultModel)
+    returnValue(model)
   }
   
   # Handle general operations to get the results
@@ -84,10 +102,9 @@
     colnames(linearModel) <- lmHeader
     
     # Gather generetade values
-    results <- list(coefficientsMatrix, linearModel, modelErrorRate, matrixDataSet)
-    names(results) <- resultsHeader
+    model <- list(coefficientsMatrix, linearModel, modelErrorRate, matrixDataSet, dependentVar, independentVar)
     
-    returnValue(results)
+    returnValue(model)
   }
   
   '
@@ -116,17 +133,17 @@
     
     coefficientsMatrix <- getMLRCoefficients(xProductMatrix, yProductMatrix, independentMatrix, independentVarList)
     
-    resultModel <- doMultivariantPredictions(coefficientsMatrix, independentMatrix, levelsMatrix, dependentMatrix)
+    resultModel <- doMultivariantPredictions(coefficientsMatrix, independentMatrix, dependentMatrix)
     
     modelErrorRate <- estimateModelError(resultModel[,2])
     
     linearModel <- cbind(dependentMatrix,resultModel)
     colnames(linearModel) <- lmHeader
   
-    results <- list(coefficientsMatrix, linearModel, modelErrorRate, matrixDataSet)
-    names(results) <- resultsHeader
+    model <- list(coefficientsMatrix, linearModel, modelErrorRate, matrixDataSet, dependentVar, independentVarList)
+    model <- handleDataHeaders(model, modelHeader)
     
-    returnValue(results)
+    returnValue(model)
   }
   
   # Linear Model ====
@@ -152,7 +169,7 @@
   # Apllies the following rule: ~Y : B0 + B1(X1 - ~X1) + B2(X2 - ~X2) + ... + Bn(Xn - ~Xn)
   # Where ~Y = estimated value for dependent value Y, Bi = Coeficient values, Xi = observed value for X, ~Xi = mean of X variable.
   # returns a Matrix with the estimated values for Y and the residuals E, where E = real value of Y - estimated value for Y
-  doMultivariantPredictions <- function(coefficientsMatrix, independentMatrix, levelsMatrix, dependentMatrix = NULL) {
+  doMultivariantPredictions <- function(coefficientsMatrix, independentMatrix, dependentMatrix = NULL) {
     predictedY <- matrix(0, nrow = nrow(independentMatrix), ncol = 1)
     residualMatrix <- matrix(0 , nrow = nrow(independentMatrix), ncol = 1)
     
@@ -294,6 +311,20 @@
     returnValue(data.matrix(rawDataSet))
   }
   
+  ' Export charts as images.
+   @p A chart object
+   @filename Name of the file to be saved.
+   @ext File extension
+  '
+  exportChartAsImg <- function(p, filename, ext) {
+    export(p, paste(filename, ext))    
+  }
+  
+  handleDataHeaders <- function(data, header) {
+    names(data) <- modelHeader 
+    returnValue(data)
+  }
+  
   # Beta-Functions ====
   ' Returns a matrix represetation of the dataset, removing the values below and above the floor and roof (ceiling) params.
    @matrixDataset A matrix representing the dataset to be handled.
@@ -334,4 +365,66 @@
     } 
 
     returnValue(matrixDataset)
+  }
+  
+  # Charts ####
+  # Add to a chart labels and title
+  applyLayout <- function(p, xLabel, yLabel, chartTitle) {
+    title <- NULL
+    if (missing(chartTitle)) {
+      title <- paste(yLabel, " by ", xLabel)
+    } else {
+      title <- chartTitle
+    }
+    
+    p <- layout(p, title = title,
+                xaxis = list(title = xLabel),
+                yaxis = list (title = yLabel))
+    returnValue(p)
+    
+  }
+  
+  'Export models as simple X vs Y line charts, from a given model.
+  @ model A LinearRegressor object.
+  @ dirToSave The directory where the plots will be exported
+  '
+  createChartsFromModel <- function(model, dirToSave = NULL) {
+    for (x in model$XIndependent) {
+      p <- lmYXLineChart(model$Dataset[,x], 
+                         model$Dataset[,model$YDependent], 
+                         model$Predictions[,"Predicted Y"],
+                         model$Predictions[,"Residual E"],
+                         x,
+                         model$YDependent)
+      
+      exportChartAsImg(p, paste(dirToSave, model$YDependent, " by ", x), ".png")
+    }
+  }
+  
+  # Creates a line chart, by ploting y in the y axis and x in the x axis.  
+  # lmYXLineChart(TipoMoradores, PrecoVenda, PrecoPrevisto, ResiduoModelo, "TipoMoradores", "PrecoVenda")
+  lmYXLineChart <- function(xData, yData, yPredicted, eResid, xLabel, yLabel) {
+    xName <- xLabel
+    yName <- yLabel
+    if (missing(xName)) {
+      xName <- "X"
+    }
+    
+    if (missing(yName)) {
+      yName <- "Y"
+    }
+    
+    chartFrame <- data.frame(xData, yData, yPredicted, eResid)    
+    aggData <- aggregate(chartFrame, by = list(chartFrame$xData), FUN = mean)
+    
+    
+    lmPlot<- plot_ly(aggData, x = ~aggData$xData, name = xName)
+    
+    lmPlot <- add_trace(lmPlot, y= ~aggData$yData, name = yName, type = 'scatter', mode = 'lines')
+    lmPlot <- add_trace(lmPlot, y = ~aggData$yPredicted, name = paste(yName, "(Pred)"), type = 'scatter', mode = 'lines')
+    lmPlot <- add_trace(lmPlot, y = ~aggData$eResid, name = 'Residual', type = 'scatter', mode = 'markers')
+    
+    lmPlot <- applyLayout(lmPlot, xName, yName)
+    returnValue(lmPlot)
+    
   }
