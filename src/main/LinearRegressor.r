@@ -174,13 +174,10 @@
     residualMatrix <- matrix(0 , nrow = nrow(independentMatrix), ncol = 1)
     
     for (r in 1:nrow(independentMatrix)) {
-      for (coe in 1:ncol(coefficientsMatrix)) {
-        if (coe == 1) {
-          predictedY[r,1] <- predictedY[r,1] + coefficientsMatrix[,coe]
-        } else {
-          predictedY[r,1] <- predictedY[r,1] + (coefficientsMatrix[,coe] * independentMatrix[r,coe - 1])
-        }
+      for (coe in 2:ncol(coefficientsMatrix)) {
+        predictedY[r,1] <- predictedY[r,1] + (coefficientsMatrix[,coe] * independentMatrix[r,coe - 1])
       }
+      predictedY[r,1] <- predictedY[r,1] + coefficientsMatrix[,1]
     }
     
     predictions <-NULL
@@ -325,47 +322,6 @@
     returnValue(data)
   }
   
-  # Beta-Functions ====
-  ' Returns a matrix represetation of the dataset, removing the values below and above the floor and roof (ceiling) params.
-   @matrixDataset A matrix representing the dataset to be handled.
-   @residualVector A vetor that contains the values of the ~Y differences between the real values for Y x predicted ones
-   @floor Lines where the E values are less than the floor value will be removed from matrixDataset. 
-   @roof Lines where the E  values are greater than the roof value will be removed from matrixDataset.
-   e.g.:
-  
-   OriginalM         Predictions (~Y) , Residuals (E)
-  
-    x1   x2   y  | ~Y     E
-  1|2   -1    4  |  3.8   0.2
-  2|3   9.2  -8  |  -7.3  -0.7
-  3|-1  0.9  0.9 |  3.6   2.6
-  4|-2   4.5   1 |  -1    -2 
-  
-  NewDataset <- removeOutliersLines(OriginalM, E, -1, 2.5)
-
-   NewDataset
-    x1   x2   y
-  1|2   -1    4
-  2|3  9.2   -8
-  
-  '
-  removeOutliersLines <- function(matrixDataset, residualVector, floor, roof) {
-    if (floor == roof) {
-      stop(paste(illegalArgsException, "floor must be different from roof."))
-    }
-    nonOutfitted <- which(residualVector > floor & residualVector < roof)
-    tmpMatrix <- matrix(nrow = length(nonOutfitted), ncol = ncol(matrixDataset), dimnames = list(c(1:length(nonOutfitted)), colnames(matrixDataset)))
-    if (length(nonOutfitted) > 0) {
-      for(r in 1:nrow(tmpMatrix)) {
-        for (c in 1:ncol(tmpMatrix)) {
-          tmpMatrix[r,c] <- matrixDataset[nonOutfitted[r],c]
-        }
-      }
-      matrixDataset <- tmpMatrix
-    } 
-
-    returnValue(matrixDataset)
-  }
   
   # Charts ####
   # Add to a chart labels and title
@@ -390,6 +346,12 @@
   '
   createChartsFromModel <- function(model, dirToSave = NULL) {
     for (x in model$XIndependent) {
+      if (isTRUE(grepl('^[0-9]', x))) {
+        x <- paste("X", x, sep = "")
+      } 
+      
+      print(paste("Generating chart for => ", x))
+      
       p <- lmYXLineChart(model$Dataset[,x], 
                          model$Dataset[,model$YDependent], 
                          model$Predictions[,"Predicted Y"],
@@ -417,13 +379,12 @@
     chartFrame <- data.frame(xData, yData, yPredicted, eResid)    
     aggData <- aggregate(chartFrame, by = list(chartFrame$xData), FUN = mean)
     
-    
     lmPlot<- plot_ly(aggData, x = ~aggData$xData, name = xName)
     
     lmPlot <- add_trace(lmPlot, y= ~aggData$yData, name = yName, type = 'scatter', mode = 'lines')
     lmPlot <- add_trace(lmPlot, y = ~aggData$yPredicted, name = paste(yName, "(Pred)"), type = 'scatter', mode = 'lines')
     lmPlot <- add_trace(lmPlot, y = ~aggData$eResid, name = 'Residual', type = 'scatter', mode = 'markers')
-    
+
     lmPlot <- applyLayout(lmPlot, xName, yName)
     returnValue(lmPlot)
     
